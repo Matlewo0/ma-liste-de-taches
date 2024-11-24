@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { db } from './firebaseConfig';
-import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import './TaskList.css';
 
-
-const TaskList = () => {
+const TaskList = ({ allowDelete = false }) => {
     const [tasks, setTasks] = useState([]);
 
     // Charger les tâches depuis Firestore
@@ -15,10 +15,16 @@ const TaskList = () => {
         return () => unsubscribe();
     }, []);
 
-    // Fonction pour mettre à jour le statut d'une tâche
+    // Mettre à jour le statut d'une tâche
     const toggleTaskCompletion = async (id, currentStatus) => {
         const taskDoc = doc(db, 'tasks', id);
         await updateDoc(taskDoc, { completed: !currentStatus });
+    };
+
+    // Supprimer une tâche
+    const deleteTask = async (id) => {
+        const taskDoc = doc(db, 'tasks', id);
+        await deleteDoc(taskDoc);
     };
 
     return (
@@ -35,6 +41,9 @@ const TaskList = () => {
                                 onChange={() => toggleTaskCompletion(task.id, task.completed)}
                             />
                             {task.name}
+                            {allowDelete && (
+                                <button onClick={() => deleteTask(task.id)}>Supprimer</button>
+                            )}
                         </li>
                     ))}
             </ul>
@@ -51,11 +60,19 @@ const TaskList = () => {
                                 onChange={() => toggleTaskCompletion(task.id, task.completed)}
                             />
                             {task.name}
+                            {allowDelete && (
+                                <button onClick={() => deleteTask(task.id)}>Supprimer</button>
+                            )}
                         </li>
                     ))}
             </ul>
         </div>
     );
+};
+
+// PropTypes pour validation
+TaskList.propTypes = {
+    allowDelete: PropTypes.bool,
 };
 
 export default TaskList;

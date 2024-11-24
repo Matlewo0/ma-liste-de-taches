@@ -1,28 +1,46 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { db } from './firebaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
 
-const TaskForm = () => {
-    const [taskName, setTaskName] = useState('');
+function TaskForm({ onTaskAdded }) {
+  const [taskName, setTaskName] = useState('');
 
-    const addTask = async (e) => {
-        e.preventDefault();
-        if (!taskName) return;
-        await addDoc(collection(db, 'tasks'), { name: taskName, completed: false });
-        setTaskName('');
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!taskName.trim()) return;
 
-    return (
-        <form onSubmit={addTask}>
-            <input
-                type="text"
-                value={taskName}
-                onChange={(e) => setTaskName(e.target.value)}
-                placeholder="Nouvelle tâche"
-            />
-            <button type="submit">Ajouter</button>
-        </form>
-    );
+    try {
+      // Ajouter la tâche à Firestore
+      const docRef = await addDoc(collection(db, 'tasks'), { name: taskName, completed: false });
+
+      // Notifier le parent (optionnel)
+      if (onTaskAdded) {
+        onTaskAdded({ id: docRef.id, name: taskName, completed: false });
+      }
+
+      // Réinitialiser le champ de saisie
+      setTaskName('');
+    } catch (error) {
+      console.error('Erreur lors de l’ajout de la tâche :', error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Nouvelle tâche"
+        value={taskName}
+        onChange={(e) => setTaskName(e.target.value)}
+      />
+      <button type="submit">Ajouter</button>
+    </form>
+  );
+}
+
+TaskForm.propTypes = {
+  onTaskAdded: PropTypes.func, // Fonction facultative pour notifier l'ajout
 };
 
 export default TaskForm;
